@@ -1,0 +1,13 @@
+{
+  "name": "model-router",
+  "owner": {
+    "name": "dk1903"
+  },
+  "plugins": [
+    {
+      "name": "model-router",
+      "source": "./",
+      "description": "Auto-picks Haiku / Sonnet / Opus per message + 5h/weekly usage left above the prompt."
+    }
+  ]
+}

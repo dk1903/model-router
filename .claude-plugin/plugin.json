@@ -1,0 +1,18 @@
+{
+  "name": "model-router",
+  "version": "0.4.0",
+  "description": "Picks Haiku / Sonnet / Opus (and effort) for each message before it is sent, steps down when your weekly limit runs low, and shows 5-hour + weekly usage left above the prompt.",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "dk1903"
+  },
+  "license": "MIT",
+  "userConfig": {
+    "dailyCap": {
+      "type": "number",
+      "title": "Daily budget (% of weekly limit)",
+      "description": "How much of your weekly limit one day may use before the router steps down to cheaper models. 0 = no daily budget.",
+      "default": 14
+    }
+  }
+}
