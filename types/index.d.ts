@@ -5,6 +5,6 @@ export type Usage = { kind: string; left: number; resetsAt?: string }[]
 
 declare module 'claude-code' {
   interface PluginState {
-    'model-router': { last: Pick | null; auto: boolean; usage: Usage; today: number | null }
+    'model-router': { last: Pick | null; auto: boolean; usage: Usage }
   }
 }

@@ -5,18 +5,7 @@ import type { Effort, Pick, Tier, Usage } from '../types'
 const last = atom({ plugin: 'model-router', key: 'last' } as const, null)
 const auto = atom({ plugin: 'model-router', key: 'auto' } as const, true)
 const usage = atom({ plugin: 'model-router', key: 'usage' } as const, [])
-const today = atom({ plugin: 'model-router', key: 'today' } as const, null)
-// Daily budget: share of the weekly limit one day may use (setting "dailyCap", default 14%). 0 turns it off.
-let DAY_CAP = 14
 
-// Today's share of the weekly limit: weekly % now minus weekly % at the first reading of the local day.
-async function trackDay($: any, u: Usage) {
-  const w = u.find(x => x.kind === 'seven_day'); if (!w) return
-  const used = 100 - w.left, day = new Date().toLocaleDateString('en-CA')
-  let d = (await $.store.get('day')) as { day: string; base: number } | undefined
-  if (!d || d.day !== day || used < d.base) { d = { day, base: used }; await $.store.set('day', d) }
-  await update($, today, () => Math.round((used - d!.base) * 10) / 10)
-}
 
 const NAME: Record<Tier, string> = { haiku: 'Haiku', sonnet: 'Sonnet', opus: 'Opus' }
 const COLOR: Record<Tier, string> = { haiku: '#7FB77E', sonnet: '#6FA8DC', opus: '#C9A0DC' }
@@ -74,16 +63,15 @@ const resets = (iso?: string) => {
   const h = Math.floor(ms / 36e5); return h >= 24 ? ` · ${Math.floor(h / 24)}d ${h % 24}h` : ` · ${h}h ${Math.floor((ms % 36e5) / 6e4)}m`
 }
 
-export const register: Register = (on, options) => {
-  DAY_CAP = Number(options?.dailyCap ?? 14) || 1000
+export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const u = await $.session.usage().catch(() => null)
-    if (u) { const v = toUsage(u.rateLimits); await update($, usage, () => v); await trackDay($, v) }
+    if (u) { const v = toUsage(u.rateLimits); await update($, usage, () => v) }
     return next(e)
   })
 
   on('session.measure', async ($, e, next) => {
-    if (e.changed.includes('rateLimits')) { const v = toUsage(e.rateLimits); await update($, usage, () => v); await trackDay($, v) }
+    if (e.changed.includes('rateLimits')) { const v = toUsage(e.rateLimits); await update($, usage, () => v) }
     return next(e)
   })
 
@@ -93,10 +81,7 @@ export const register: Register = (on, options) => {
     const week = (await read($, usage)).find(x => x.kind === 'seven_day')
     const msgs = await $.session.messages().catch(() => [] as any[])
     const prev = (msgs as any[]).filter(m => m.role === 'assistant' && typeof m.text === 'string' && m.text.trim()).at(-1)?.text || ''
-    let { tier, effort, reason } = routeWithContext(text, prev, week ? 100 - week.left : null)
-    const t = await read($, today)
-    if (t != null && t >= DAY_CAP - 2 && tier !== 'haiku') { tier = 'haiku'; effort = 'low'; reason = `${reason} · today ${t}% of ${DAY_CAP}% cap` }
-    else if (t != null && t >= DAY_CAP - 5) { effort = DOWN[effort]; reason = `${reason} · easy on today's cap` }
+    const { tier, effort, reason } = routeWithContext(text, prev, week ? 100 - week.left : null)
     const now = tierOf(await $.session.model().catch(() => ''))
     let switched = false
     if (now !== tier) {
@@ -121,7 +106,7 @@ export const register: Register = (on, options) => {
     const rest: any = await next(e)
     if (e.props.hasSurvey) return rest
     const { Box, Text, Button } = $.ui.resolve(e)
-    const pick = await read($, last), on_ = await read($, auto), u = await read($, usage), td = await read($, today)
+    const pick = await read($, last), on_ = await read($, auto), u = await read($, usage)
     const wins = u.filter(x => x.kind === 'five_hour' || x.kind === 'seven_day' || x.kind === 'spend_limit')
     const mine = (
       <Box flexDirection="column">
@@ -135,7 +120,6 @@ export const register: Register = (on, options) => {
         {wins.length
           ? <Box>{wins.map(w => <Text key={w.kind}><Text dimColor>{label(w.kind)} </Text><Text color={tone(w.left)}>{bar(w.left)} {w.left}% left</Text><Text dimColor>{resets(w.resetsAt)}   </Text></Text>)}</Box>
           : <Text dimColor>Usage: shows after your first reply</Text>}
-        {td != null ? <Text><Text dimColor>Today </Text><Text color={td >= DAY_CAP ? '#E06C75' : td >= DAY_CAP - 3 ? '#E5C07B' : '#7FB77E'}>{td}% of {DAY_CAP}% daily cap</Text><Text dimColor>{td >= DAY_CAP - 2 ? ' · Haiku only' : ''}</Text></Text> : null}
       </Box>
     )
     return rest && rest.type !== 'engine' ? <Box flexDirection="column">{rest}{mine}</Box> : mine
