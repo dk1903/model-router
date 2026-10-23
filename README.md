@@ -2,6 +2,8 @@
 
 A Claude Code mod that picks the model **before** each message is sent, so you stop burning Opus on "ok thanks" and stop sending real builds to Haiku.
 
+![model-router picking Haiku, Opus and Sonnet as you type](assets/demo.gif)
+
 - **Auto model + effort per message**: Haiku for quick questions and small talk, Sonnet for edits and writing, Opus for builds, debugging, refactors and plans. It also reads the last assistant message, so a short "yes" to "want me to build X?" counts as a build.
 - **Protects your limits**: steps down (model and effort) when your weekly limit runs low, so the last of your week isn't burned on Opus.
 - **Usage at a glance**: a small band above the prompt shows 5-hour and weekly usage left, when each resets.
@@ -34,6 +36,10 @@ In the desktop app: click **+** next to the prompt box → **Plugins** → **Add
 | build, design, debug, refactor, migrate, research, "from scratch" | Opus | high |
 | weekly limit 85% used | Opus → Sonnet | one step down |
 | weekly limit 95% used | Haiku | low |
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md). Ideas and issues welcome.
 
 ## License
 
